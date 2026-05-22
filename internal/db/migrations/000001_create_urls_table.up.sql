@@ -1,0 +1,11 @@
+CREATE SEQUENCE IF NOT EXISTS urls_id_seq START WITH 1;
+
+CREATE TABLE IF NOT EXISTS urls (
+    id BIGINT PRIMARY KEY DEFAULT nextval('urls_id_seq'),
+    short_code VARCHAR(255) UNIQUE,
+    original_url TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX IF NOT EXISTS idx_urls_short_code ON urls(short_code);
