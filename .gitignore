@@ -1,1 +1,15 @@
 .antigravitycli/
+vendor/
+.env
+
+# Go build outputs
+bin/
+url-shortener
+*.exe
+*.test
+*.prof
+main
+
+# IDEs
+.vscode/
+.idea/
