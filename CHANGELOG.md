@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed all inline, block, and documentation comments from Go source files (`.go`) across the entire repository to enforce a strictly self-documenting code design.
 
 ### Added
+- Created a comprehensive, system design and architecture-focused `README.md` containing simple API endpoints and quick start instructions.
 - Database migration `000002_alter_urls_short_code_limit.up.sql` to dynamically increase `short_code` column limit to `255` characters.
 - Core `URL` domain model in `internal/models/url.go`.
 - Cryptographic `Feistel` cipher service in `internal/service/feistel.go` to scramble database IDs for non-predictability.
