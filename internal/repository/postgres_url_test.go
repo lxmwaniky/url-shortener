@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"gitlab.com/lxmwaniky/url-shortener/internal/config"
-	"gitlab.com/lxmwaniky/url-shortener/internal/db"
-	"gitlab.com/lxmwaniky/url-shortener/internal/service"
+	"github.com/lxmwaniky/url-shortener/internal/config"
+	"github.com/lxmwaniky/url-shortener/internal/db"
+	"github.com/lxmwaniky/url-shortener/internal/service"
 )
 
 func TestPostgresURLRepository(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"gitlab.com/lxmwaniky/url-shortener/internal/models"
+	"github.com/lxmwaniky/url-shortener/internal/models"
 )
 
 type MockURLRepository struct {

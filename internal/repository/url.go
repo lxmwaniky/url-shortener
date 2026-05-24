@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"gitlab.com/lxmwaniky/url-shortener/internal/models"
+	"github.com/lxmwaniky/url-shortener/internal/models"
 )
 
 type URLRepository interface {

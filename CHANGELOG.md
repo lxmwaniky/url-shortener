@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Changed Go module path and all internal project imports from `gitlab.com/lxmwaniky/url-shortener` to `github.com/lxmwaniky/url-shortener` to completely decouple the codebase from GitLab.
 - Decoupled the API redirection base URI from hardcoded production checks, loading it dynamically via a `BASE_URL` environment configuration parameter with an automatic local fallback based on active ports.
 
 ### Removed
+- Removed `.gitlab-ci.yml` and all references to GitLab from the project configuration and remote mappings.
 - Removed all inline, block, and documentation comments from Go source files (`.go`) across the entire repository to enforce a strictly self-documenting code design.
 
 ### Added

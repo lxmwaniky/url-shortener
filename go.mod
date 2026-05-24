@@ -1,4 +1,4 @@
-module gitlab.com/lxmwaniky/url-shortener
+module github.com/lxmwaniky/url-shortener
 
 go 1.26.1
 

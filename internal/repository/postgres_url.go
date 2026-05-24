@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"gitlab.com/lxmwaniky/url-shortener/internal/models"
-	"gitlab.com/lxmwaniky/url-shortener/internal/service"
+	"github.com/lxmwaniky/url-shortener/internal/models"
+	"github.com/lxmwaniky/url-shortener/internal/service"
 )
 
 var (

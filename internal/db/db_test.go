@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"gitlab.com/lxmwaniky/url-shortener/internal/config"
+	"github.com/lxmwaniky/url-shortener/internal/config"
 )
 
 func TestDatabaseConnectionAndMigrations(t *testing.T) {

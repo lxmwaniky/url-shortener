@@ -6,7 +6,7 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"gitlab.com/lxmwaniky/url-shortener/internal/config"
+	"github.com/lxmwaniky/url-shortener/internal/config"
 )
 
 func Connect(cfg *config.Config) (*sql.DB, error) {

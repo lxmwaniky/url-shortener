@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"gitlab.com/lxmwaniky/url-shortener/internal/config"
-	"gitlab.com/lxmwaniky/url-shortener/internal/db"
-	"gitlab.com/lxmwaniky/url-shortener/internal/repository"
-	"gitlab.com/lxmwaniky/url-shortener/internal/service"
-	"gitlab.com/lxmwaniky/url-shortener/internal/web"
+	"github.com/lxmwaniky/url-shortener/internal/config"
+	"github.com/lxmwaniky/url-shortener/internal/db"
+	"github.com/lxmwaniky/url-shortener/internal/repository"
+	"github.com/lxmwaniky/url-shortener/internal/service"
+	"github.com/lxmwaniky/url-shortener/internal/web"
 )
 
 func main() {

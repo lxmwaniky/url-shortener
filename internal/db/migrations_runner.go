@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strconv"
 
-	"gitlab.com/lxmwaniky/url-shortener/internal/db/migrations"
+	"github.com/lxmwaniky/url-shortener/internal/db/migrations"
 )
 
 type MigrationRunner struct {

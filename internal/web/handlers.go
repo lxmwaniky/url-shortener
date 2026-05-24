@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"gitlab.com/lxmwaniky/url-shortener/internal/repository"
+	"github.com/lxmwaniky/url-shortener/internal/repository"
 )
 
 type ShortenRequest struct {
