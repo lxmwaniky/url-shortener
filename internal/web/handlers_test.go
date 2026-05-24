@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -25,19 +26,62 @@ func (m *MockURLRepository) GetByShortCode(ctx context.Context, code string) (*m
 	return m.GetByShortCodeFunc(ctx, code)
 }
 
+type mockDB struct {
+	pingFunc func(context.Context) error
+}
+
+func (m *mockDB) PingContext(ctx context.Context) error {
+	if m.pingFunc != nil {
+		return m.pingFunc(ctx)
+	}
+	return nil
+}
+
 func TestHealthHandler(t *testing.T) {
 	mockRepo := &MockURLRepository{}
-	// Since we aren't pinging DB in this unit test, h.db is not required for a standard request unless ping is called
-	handlers := NewHandlers(mockRepo, nil, "http://localhost:8080")
+	handlers := NewHandlers(mockRepo, &mockDB{pingFunc: func(context.Context) error { return nil }}, "http://localhost:8080")
 
 	req := httptest.NewRequest("GET", "/health", nil)
 	rr := httptest.NewRecorder()
 
-	// Direct call to health handler (pypassing ping since db is nil, but wait: h.db.PingContext will crash if h.db is nil!)
-	// To avoid nil pointer panic, let's write a basic test for Shorten URL validation instead
-	_ = handlers
-	_ = req
-	_ = rr
+	handlers.Health(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("Expected status code %d for healthy DB, got %d", http.StatusOK, rr.Code)
+	}
+
+	var resp map[string]string
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	if resp["status"] != "healthy" {
+		t.Errorf("Expected status 'healthy', got %v", resp["status"])
+	}
+
+	// Test unhealthy case
+	handlersUnhealthy := NewHandlers(mockRepo, &mockDB{pingFunc: func(context.Context) error { return errors.New("database connection failed") }}, "http://localhost:8080")
+
+	reqUnhealthy := httptest.NewRequest("GET", "/health", nil)
+	rrUnhealthy := httptest.NewRecorder()
+
+	handlersUnhealthy.Health(rrUnhealthy, reqUnhealthy)
+
+	if rrUnhealthy.Code != http.StatusServiceUnavailable {
+		t.Errorf("Expected status code %d for unhealthy DB, got %d", http.StatusServiceUnavailable, rrUnhealthy.Code)
+	}
+
+	var respUnhealthy map[string]string
+	if err := json.NewDecoder(rrUnhealthy.Body).Decode(&respUnhealthy); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	if respUnhealthy["status"] != "unhealthy" {
+		t.Errorf("Expected status 'unhealthy', got %v", respUnhealthy["status"])
+	}
+	if respUnhealthy["error"] != "database connection failed" {
+		t.Errorf("Expected error 'database connection failed', got %v", respUnhealthy["error"])
+	}
 }
 
 func TestIndexHandler(t *testing.T) {
@@ -100,7 +144,16 @@ func TestShortenHandlerValidation(t *testing.T) {
 		t.Errorf("Expected status code %d for invalid URL, got %d", http.StatusBadRequest, rr.Code)
 	}
 
-	// Test case: Valid URL
+	body = `{"original_url": "http://localhost:5432"}`
+	req = httptest.NewRequest("POST", "/shorten", strings.NewReader(body))
+	rr = httptest.NewRecorder()
+
+	handlers.Shorten(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected status code %d for private IP, got %d", http.StatusBadRequest, rr.Code)
+	}
+
 	body = `{"original_url": "https://google.com"}`
 	req = httptest.NewRequest("POST", "/shorten", strings.NewReader(body))
 	rr = httptest.NewRecorder()

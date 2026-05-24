@@ -46,9 +46,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Automated SRE Cleaner: background task to purge expired links once a day
+	// Parse cleanup interval
+	cleanupInterval, err := time.ParseDuration(cfg.CleanupInterval)
+	if err != nil {
+		slog.Error("invalid cleanup interval", "error", err)
+		os.Exit(1)
+	}
+
+	// Automated SRE Cleaner: background task to purge expired links based on configuration
 	go func() {
-		ticker := time.NewTicker(24 * time.Hour)
+		ticker := time.NewTicker(cleanupInterval)
+		defer ticker.Stop()
 		ctx := context.Background()
 		for range ticker.C {
 			slog.Info("starting automated background purge of expired urls")
@@ -73,20 +81,23 @@ func main() {
 
 	handlers := web.NewHandlers(repo, database, baseURI)
 
-	// Rate Limiting: 10 writes (link creations) per client IP per minute
-	limiter := web.NewIPRateLimiter(10, 1*time.Minute)
+	// Rate Limiting: 10 writes (link creations) per client IP per minute, 100 reads per minute
+	multiLimiter := web.NewMultiLimiter(10, 1*time.Minute, 100, 1*time.Minute)
 
 	// Setup go-chi router and register middlewares
 	r := chi.NewRouter()
 	r.Use(web.Recovery)
+	r.Use(web.RequestID)
 	r.Use(web.Logger)
+	r.Use(web.SecurityHeaders)
 
 	r.Get("/", handlers.Index)
 	r.Get("/health", handlers.Health)
-	r.Get("/{code}", handlers.Redirect)
+	// Apply rate limiting to read endpoints as well (but with higher limit)
+	r.With(web.RateLimit(multiLimiter.ReadLimiter)).Get("/{code}", handlers.Redirect)
 
 	// Rate limit is mounted only on the write path (POST /shorten) to protect storage
-	r.With(web.RateLimit(limiter)).Post("/shorten", handlers.Shorten)
+	r.With(web.RateLimit(multiLimiter.WriteLimiter)).Post("/shorten", handlers.Shorten)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,

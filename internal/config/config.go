@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -24,6 +25,7 @@ type Config struct {
 	DBName      string
 	DBSSLMode   string
 	FeistelSeed uint32
+	CleanupInterval string
 }
 
 func Load() (*Config, error) {
@@ -31,6 +33,10 @@ func Load() (*Config, error) {
 	loadEnv()
 
 	port := getEnv("PORT", "8080")
+	if err := validatePort(port); err != nil {
+		return nil, fmt.Errorf("invalid PORT: %w", err)
+	}
+
 	env := getEnv("ENV", "local")
 
 	dbHost := os.Getenv("DB_HOST")
@@ -39,6 +45,9 @@ func Load() (*Config, error) {
 	}
 
 	dbPort := getEnv("DB_PORT", "5432")
+	if err := validatePort(dbPort); err != nil {
+		return nil, fmt.Errorf("invalid DB_PORT: %w", err)
+	}
 
 	dbUser := os.Getenv("DB_USER")
 	if dbUser == "" {
@@ -67,16 +76,22 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid FEISTEL_SEED: must be a positive 32-bit integer: %w", err)
 	}
 
+	cleanupInterval := getEnv("CLEANUP_INTERVAL", "24h")
+	if _, err := time.ParseDuration(cleanupInterval); err != nil {
+		return nil, fmt.Errorf("invalid CLEANUP_INTERVAL: must be a valid duration string: %w", err)
+	}
+
 	return &Config{
-		Port:        port,
-		Env:         env,
-		DBHost:      dbHost,
-		DBPort:      dbPort,
-		DBUser:      dbUser,
-		DBPassword:  dbPassword,
-		DBName:      dbName,
-		DBSSLMode:   dbSSLMode,
-		FeistelSeed: uint32(seed),
+		Port:             port,
+		Env:              env,
+		DBHost:           dbHost,
+		DBPort:           dbPort,
+		DBUser:           dbUser,
+		DBPassword:       dbPassword,
+		DBName:           dbName,
+		DBSSLMode:        dbSSLMode,
+		FeistelSeed:      uint32(seed),
+		CleanupInterval:  cleanupInterval,
 	}, nil
 }
 
@@ -110,4 +125,22 @@ func loadEnv() {
 		}
 		dir = parent
 	}
+}
+
+func validatePort(port string) error {
+	if port == "" {
+		return errors.New("port cannot be empty")
+	}
+
+	// Check if it's a valid port number
+	if _, err := strconv.Atoi(port); err != nil {
+		return fmt.Errorf("port must be a number: %w", err)
+	}
+
+	portNum, _ := strconv.Atoi(port)
+	if portNum < 1 || portNum > 65535 {
+		return errors.New("port must be between 1 and 65535")
+	}
+
+	return nil
 }

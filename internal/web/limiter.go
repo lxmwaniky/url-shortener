@@ -58,3 +58,17 @@ func (l *IPRateLimiter) Allow(ip string) bool {
 
 	return false
 }
+
+// MultiLimiter holds different limiters for different purposes
+type MultiLimiter struct {
+	WriteLimiter *IPRateLimiter
+	ReadLimiter  *IPRateLimiter
+}
+
+// NewMultiLimiter creates a multi-limiter with different limits for read/write operations
+func NewMultiLimiter(writeLimit int, writePeriod time.Duration, readLimit int, readPeriod time.Duration) *MultiLimiter {
+	return &MultiLimiter{
+		WriteLimiter: NewIPRateLimiter(writeLimit, writePeriod),
+		ReadLimiter:  NewIPRateLimiter(readLimit, readPeriod),
+	}
+}
