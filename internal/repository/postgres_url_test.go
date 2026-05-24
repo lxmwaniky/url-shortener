@@ -23,7 +23,6 @@ func TestPostgresURLRepository(t *testing.T) {
 	}
 	defer database.Close()
 
-	// Ensure migrations are run so table structure is present
 	runner := db.NewMigrationRunner(database)
 	if err := runner.MigrateUp(); err != nil {
 		t.Fatalf("Failed to run database migrations: %v", err)
@@ -56,7 +55,6 @@ func TestPostgresURLRepository(t *testing.T) {
 			t.Errorf("Expected OriginalURL to be %q, got %q", original, created.OriginalURL)
 		}
 
-		// Verify retrieval (Primary Key high-speed path)
 		retrieved, err := repo.GetByShortCode(ctx, created.ShortCode)
 		if err != nil {
 			t.Fatalf("Failed to retrieve URL by short code: %v", err)
@@ -83,7 +81,6 @@ func TestPostgresURLRepository(t *testing.T) {
 			t.Errorf("Expected short code to be %q, got %q", alias, created.ShortCode)
 		}
 
-		// Verify retrieval (Fallback string lookup path)
 		retrieved, err := repo.GetByShortCode(ctx, alias)
 		if err != nil {
 			t.Fatalf("Failed to retrieve custom URL: %v", err)
@@ -103,7 +100,6 @@ func TestPostgresURLRepository(t *testing.T) {
 			t.Fatalf("Failed to create initial custom URL: %v", err)
 		}
 
-		// Attempt duplicate insert
 		_, err = repo.Create(ctx, "https://url2.com", alias, nil)
 		if !errors.Is(err, ErrAliasAlreadyExists) {
 			t.Errorf("Expected error ErrAliasAlreadyExists, got %v", err)

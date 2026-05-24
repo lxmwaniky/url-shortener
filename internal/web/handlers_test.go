@@ -59,7 +59,6 @@ func TestHealthHandler(t *testing.T) {
 		t.Errorf("Expected status 'healthy', got %v", resp["status"])
 	}
 
-	// Test unhealthy case
 	handlersUnhealthy := NewHandlers(mockRepo, &mockDB{pingFunc: func(context.Context) error { return errors.New("database connection failed") }}, "http://localhost:8080")
 
 	reqUnhealthy := httptest.NewRequest("GET", "/health", nil)
@@ -122,7 +121,6 @@ func TestShortenHandlerValidation(t *testing.T) {
 
 	handlers := NewHandlers(mockRepo, nil, "http://localhost:8080")
 
-	// Test case: Missing URL
 	body := `{"original_url": ""}`
 	req := httptest.NewRequest("POST", "/shorten", strings.NewReader(body))
 	rr := httptest.NewRecorder()
@@ -133,7 +131,6 @@ func TestShortenHandlerValidation(t *testing.T) {
 		t.Errorf("Expected status code %d for missing URL, got %d", http.StatusBadRequest, rr.Code)
 	}
 
-	// Test case: Invalid URL format
 	body = `{"original_url": "not-a-valid-url"}`
 	req = httptest.NewRequest("POST", "/shorten", strings.NewReader(body))
 	rr = httptest.NewRecorder()

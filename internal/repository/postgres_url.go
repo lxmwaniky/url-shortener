@@ -59,7 +59,6 @@ func (r *PostgresURLRepository) Create(ctx context.Context, originalURL string, 
 		}, nil
 	}
 
-	// Single-trip sequence allocation flow
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %w", err)
@@ -100,7 +99,6 @@ func (r *PostgresURLRepository) Create(ctx context.Context, originalURL string, 
 }
 
 func (r *PostgresURLRepository) GetByShortCode(ctx context.Context, code string) (*models.URL, error) {
-	// Attempt fast Integer Primary Key seek if code is a standard Base62 encoding
 	shuffled, err := r.encoder.Decode(code)
 	if err == nil {
 		id := r.feistel.Decrypt(shuffled)
@@ -122,7 +120,6 @@ func (r *PostgresURLRepository) GetByShortCode(ctx context.Context, code string)
 		}
 	}
 
-	// Fallback to searching by short_code directly (needed for custom aliases or base62 conflicts)
 	var url models.URL
 	query := `
 		SELECT id, short_code, original_url, created_at, expires_at 

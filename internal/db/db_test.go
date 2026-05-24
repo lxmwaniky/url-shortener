@@ -21,14 +21,12 @@ func TestDatabaseConnectionAndMigrations(t *testing.T) {
 
 	t.Log("Database connection verified successfully!")
 
-	// Run migrations to verify they apply without syntax errors
 	runner := NewMigrationRunner(db)
 	if err := runner.MigrateUp(); err != nil {
 		t.Fatalf("Failed to run database migrations: %v", err)
 	}
 	t.Log("Database migrations applied successfully!")
 
-	// Verify table and sequence were created correctly
 	ctx := context.Background()
 	var exists bool
 	err = db.QueryRowContext(ctx, `

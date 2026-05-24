@@ -20,7 +20,6 @@ import (
 )
 
 func main() {
-	// Initialize SRE Structured Logging (JSON)
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -46,14 +45,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Parse cleanup interval
 	cleanupInterval, err := time.ParseDuration(cfg.CleanupInterval)
 	if err != nil {
 		slog.Error("invalid cleanup interval", "error", err)
 		os.Exit(1)
 	}
 
-	// Automated SRE Cleaner: background task to purge expired links based on configuration
 	go func() {
 		ticker := time.NewTicker(cleanupInterval)
 		defer ticker.Stop()
@@ -76,15 +73,13 @@ func main() {
 
 	baseURI := fmt.Sprintf("http://localhost:%s", cfg.Port)
 	if cfg.Env == "production" {
-		baseURI = "https://url-shortener.com" // Update when live domain is ready
+		baseURI = "https://url-shortener.com"
 	}
 
 	handlers := web.NewHandlers(repo, database, baseURI)
 
-	// Rate Limiting: 10 writes (link creations) per client IP per minute, 100 reads per minute
 	multiLimiter := web.NewMultiLimiter(10, 1*time.Minute, 100, 1*time.Minute)
 
-	// Setup go-chi router and register middlewares
 	r := chi.NewRouter()
 	r.Use(web.Recovery)
 	r.Use(web.RequestID)
@@ -93,10 +88,8 @@ func main() {
 
 	r.Get("/", handlers.Index)
 	r.Get("/health", handlers.Health)
-	// Apply rate limiting to read endpoints as well (but with higher limit)
 	r.With(web.RateLimit(multiLimiter.ReadLimiter)).Get("/{code}", handlers.Redirect)
 
-	// Rate limit is mounted only on the write path (POST /shorten) to protect storage
 	r.With(web.RateLimit(multiLimiter.WriteLimiter)).Post("/shorten", handlers.Shorten)
 
 	server := &http.Server{
@@ -107,7 +100,6 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// Listen for SIGINT / SIGTERM signals for Graceful SRE Shutdown
 	shutdownChan := make(chan os.Signal, 1)
 	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
 
@@ -122,7 +114,6 @@ func main() {
 	sig := <-shutdownChan
 	slog.Info("received termination signal, initiating graceful shutdown", "signal", sig.String())
 
-	// Give active requests 15 seconds to safely drain/complete before forcing exit
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 

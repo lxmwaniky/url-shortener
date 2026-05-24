@@ -29,35 +29,28 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
-// RequestID middleware that generates/adds request IDs
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check if request ID already exists in header (for tracing)
 		requestID := r.Header.Get("X-Request-ID")
 		if requestID == "" {
-			// Generate a new request ID (16 bytes = 32 hex chars)
 			b := make([]byte, 16)
 			if _, err := rand.Read(b); err != nil {
-				// Fallback to time-based ID if rand fails
 				requestID = fmt.Sprintf("%d", time.Now().UnixNano())
 			} else {
 				requestID = hex.EncodeToString(b)
 			}
 		}
 
-		// Add request ID to context for downstream use
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "requestID", requestID)
 		r = r.WithContext(ctx)
 
-		// Add request ID to response header for client tracking
 		w.Header().Set("X-Request-ID", requestID)
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// Logger logs HTTP requests with request ID for tracing
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -103,7 +96,6 @@ func Recovery(next http.Handler) http.Handler {
 	})
 }
 
-// SecurityHeaders adds security headers to HTTP responses
 func SecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")

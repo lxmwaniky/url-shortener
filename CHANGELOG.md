@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Removed all inline, block, and documentation comments from Go source files (`.go`) across the entire repository to enforce a strictly self-documenting code design.
+
 ### Added
 - Database migration `000002_alter_urls_short_code_limit.up.sql` to dynamically increase `short_code` column limit to `255` characters.
 - Core `URL` domain model in `internal/models/url.go`.
@@ -31,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production-ready application entrypoint in `cmd/api/main.go` featuring graceful server shutdown and an automated asynchronous background database cleaner to daily purge expired links.
 
 ### Fixed
+- Fixed Go configuration build failure by removing unused `"net"` and `"strings"` package imports from `internal/config/config.go`.
+- Secured URL shortening against Server-Side Request Forgery (SSRF) by wiring up the `isPrivateIP` validation block inside the `Shorten` web handler to reject internal/private loopback networks.
+- Decoupled `Handlers` database client by replacing the concrete `*sql.DB` type with a mockable `DBConnection` interface.
+- Resolved compilation issues in `internal/web/handlers_test.go` and added a unit test case validating private IP address rejection inside `TestShortenHandlerValidation`.
 - Fixed leaky environment variable cleanup in `internal/config/config_test.go` by replacing manual restoration checks with robust, explicit `os.LookupEnv` and `os.Unsetenv` state management.
 - Resolved premature skip triggers in `internal/db/db_test.go` and `internal/repository/postgres_url_test.go` by invoking `config.Load()` first, enabling the recursive `.env` file loader to resolve configuration parameters before asserting their presence.
 - Corrected Go `uint64` database lookup overflow in `GetByShortCode` by verifying decrypted sequence IDs are within the PostgreSQL signed `BIGINT` range (`math.MaxInt64`) before querying, preventing 500 errors and ensuring invalid short codes properly return 404.

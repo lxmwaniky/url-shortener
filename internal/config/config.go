@@ -29,7 +29,6 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	// Automatically load .env file from the root or parent directories
 	loadEnv()
 
 	port := getEnv("PORT", "8080")
@@ -112,7 +111,6 @@ func loadEnv() {
 		return
 	}
 
-	// Search upwards for .env file
 	for {
 		envPath := filepath.Join(dir, ".env")
 		if _, err := os.Stat(envPath); err == nil {
@@ -132,7 +130,6 @@ func validatePort(port string) error {
 		return errors.New("port cannot be empty")
 	}
 
-	// Check if it's a valid port number
 	if _, err := strconv.Atoi(port); err != nil {
 		return fmt.Errorf("port must be a number: %w", err)
 	}

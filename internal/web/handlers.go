@@ -45,36 +45,28 @@ func NewHandlers(repo repository.URLRepository, db DBConnection, baseURI string)
 	}
 }
 
-// isPrivateIP checks if a host string represents a private/internal IP address
-// Returns true for localhost, loopback, private ranges (RFC1918), and link-local addresses
 func isPrivateIP(host string) bool {
-	// Remove port if present
 	if colon := strings.LastIndex(host, ":"); colon != -1 {
 		host = host[:colon]
 	}
 
-	// Check for localhost
 	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
 		return true
 	}
 
 	ip := net.ParseIP(host)
 	if ip == nil {
-		// Not a valid IP, could be a domain name - we'll allow it (could be enhanced with DNS resolution)
 		return false
 	}
 
-	// Check for private IP ranges
 	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
 		return true
 	}
 
-	// Check for private networks (RFC1918): 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
 	if ipInNet(ip, "10.0.0.0/8") || ipInNet(ip, "172.16.0.0/12") || ipInNet(ip, "192.168.0.0/16") {
 		return true
 	}
 
-	// Check for carrier-grade NAT (RFC6598): 100.64.0.0/10
 	if ipInNet(ip, "100.64.0.0/10") {
 		return true
 	}
@@ -82,7 +74,6 @@ func isPrivateIP(host string) bool {
 	return false
 }
 
-// ipInNet checks if an IP address is within a CIDR network
 func ipInNet(ip net.IP, cidr string) bool {
 	_, network, err := net.ParseCIDR(cidr)
 	if err != nil {
@@ -129,7 +120,7 @@ func (h *Handlers) Shorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiresAt := time.Now().Add(30 * 24 * time.Hour) // Cap lifespan to exactly 1 month
+	expiresAt := time.Now().Add(30 * 24 * time.Hour)
 
 	created, err := h.repo.Create(r.Context(), req.OriginalURL, req.CustomAlias, &expiresAt)
 	if err != nil {

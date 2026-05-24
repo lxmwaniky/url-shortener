@@ -12,7 +12,7 @@ func TestFeistelReversibility(t *testing.T) {
 		100,
 		12345,
 		99999999,
-		18446744073709551615, // Max uint64
+		18446744073709551615,
 	}
 
 	for _, tc := range testCases {
@@ -35,7 +35,6 @@ func TestFeistelObfuscation(t *testing.T) {
 		t.Errorf("Feistel output is equal for different inputs: Encrypt(1) = %d, Encrypt(2) = %d", val1, val2)
 	}
 
-	// Ensure they don't look sequential
 	diff := int64(val1) - int64(val2)
 	if diff == 1 || diff == -1 {
 		t.Errorf("Feistel outputs look sequential: Encrypt(1) = %d, Encrypt(2) = %d", val1, val2)

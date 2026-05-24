@@ -11,7 +11,7 @@ func TestBase62Reversibility(t *testing.T) {
 		62,
 		63,
 		999999,
-		18446744073709551615, // Max uint64
+		18446744073709551615,
 	}
 
 	for _, tc := range testCases {
