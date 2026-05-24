@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Decoupled the API redirection base URI from hardcoded production checks, loading it dynamically via a `BASE_URL` environment configuration parameter with an automatic local fallback based on active ports.
+
 ### Removed
 - Removed all inline, block, and documentation comments from Go source files (`.go`) across the entire repository to enforce a strictly self-documenting code design.
 

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -71,12 +70,7 @@ func main() {
 	encoder := service.NewBase62Encoder()
 	repo := repository.NewPostgresURLRepository(database, feistel, encoder)
 
-	baseURI := fmt.Sprintf("http://localhost:%s", cfg.Port)
-	if cfg.Env == "production" {
-		baseURI = "https://url-shortener.com"
-	}
-
-	handlers := web.NewHandlers(repo, database, baseURI)
+	handlers := web.NewHandlers(repo, database, cfg.BaseURL)
 
 	multiLimiter := web.NewMultiLimiter(10, 1*time.Minute, 100, 1*time.Minute)
 

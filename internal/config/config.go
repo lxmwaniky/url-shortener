@@ -26,6 +26,7 @@ type Config struct {
 	DBSSLMode   string
 	FeistelSeed uint32
 	CleanupInterval string
+	BaseURL string
 }
 
 func Load() (*Config, error) {
@@ -80,6 +81,8 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid CLEANUP_INTERVAL: must be a valid duration string: %w", err)
 	}
 
+	baseURL := getEnv("BASE_URL", "http://localhost:"+port)
+
 	return &Config{
 		Port:             port,
 		Env:              env,
@@ -91,6 +94,7 @@ func Load() (*Config, error) {
 		DBSSLMode:        dbSSLMode,
 		FeistelSeed:      uint32(seed),
 		CleanupInterval:  cleanupInterval,
+		BaseURL:          baseURL,
 	}, nil
 }
 
