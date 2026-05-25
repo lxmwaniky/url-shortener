@@ -79,7 +79,7 @@ func main() {
 	postgresRepo := repository.NewPostgresURLRepository(database, feistel, encoder)
 	repo := repository.NewCachedURLRepository(postgresRepo, redisClient, 24*time.Hour)
 
-	handlers := web.NewHandlers(repo, database, cfg.BaseURL)
+	handlers := web.NewHandlers(repo, database, redisClient, cfg.BaseURL)
 
 	writeLimiter := web.NewRedisRateLimiter(redisClient, 10, 1*time.Minute, "write")
 	readLimiter := web.NewRedisRateLimiter(redisClient, 100, 1*time.Minute, "read")

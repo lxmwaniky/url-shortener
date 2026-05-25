@@ -10,8 +10,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/lxmwaniky/url-shortener/internal/models"
 )
+
+type mockRedisPingable struct {
+	pingFunc func(ctx context.Context) *redis.StatusCmd
+}
+
+func (m *mockRedisPingable) Ping(ctx context.Context) *redis.StatusCmd {
+	if m.pingFunc != nil {
+		return m.pingFunc(ctx)
+	}
+	return redis.NewStatusResult("PONG", nil)
+}
 
 type MockURLRepository struct {
 	CreateFunc         func(ctx context.Context, originalURL string, customAlias string, expiresAt *time.Time) (*models.URL, error)
@@ -39,53 +51,110 @@ func (m *mockDB) PingContext(ctx context.Context) error {
 
 func TestHealthHandler(t *testing.T) {
 	mockRepo := &MockURLRepository{}
-	handlers := NewHandlers(mockRepo, &mockDB{pingFunc: func(context.Context) error { return nil }}, "http://localhost:8080")
 
-	req := httptest.NewRequest("GET", "/health", nil)
-	rr := httptest.NewRecorder()
+	t.Run("Both Healthy", func(t *testing.T) {
+		handlers := NewHandlers(
+			mockRepo,
+			&mockDB{pingFunc: func(context.Context) error { return nil }},
+			&mockRedisPingable{pingFunc: func(ctx context.Context) *redis.StatusCmd {
+				return redis.NewStatusResult("PONG", nil)
+			}},
+			"http://localhost:8080",
+		)
 
-	handlers.Health(rr, req)
+		req := httptest.NewRequest("GET", "/health", nil)
+		rr := httptest.NewRecorder()
+		handlers.Health(rr, req)
 
-	if rr.Code != http.StatusOK {
-		t.Errorf("Expected status code %d for healthy DB, got %d", http.StatusOK, rr.Code)
-	}
+		if rr.Code != http.StatusOK {
+			t.Errorf("Expected status code %d, got %d", http.StatusOK, rr.Code)
+		}
 
-	var resp map[string]string
-	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
+		var resp map[string]interface{}
+		if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
 
-	if resp["status"] != "healthy" {
-		t.Errorf("Expected status 'healthy', got %v", resp["status"])
-	}
+		if resp["status"] != "healthy" {
+			t.Errorf("Expected status 'healthy', got %v", resp["status"])
+		}
 
-	handlersUnhealthy := NewHandlers(mockRepo, &mockDB{pingFunc: func(context.Context) error { return errors.New("database connection failed") }}, "http://localhost:8080")
+		components := resp["components"].(map[string]interface{})
+		if components["database"] != "up" || components["redis"] != "up" {
+			t.Errorf("Expected both components up, got %v", resp["components"])
+		}
+	})
 
-	reqUnhealthy := httptest.NewRequest("GET", "/health", nil)
-	rrUnhealthy := httptest.NewRecorder()
+	t.Run("Database Unhealthy", func(t *testing.T) {
+		handlers := NewHandlers(
+			mockRepo,
+			&mockDB{pingFunc: func(context.Context) error { return errors.New("db error") }},
+			&mockRedisPingable{pingFunc: func(ctx context.Context) *redis.StatusCmd {
+				return redis.NewStatusResult("PONG", nil)
+			}},
+			"http://localhost:8080",
+		)
 
-	handlersUnhealthy.Health(rrUnhealthy, reqUnhealthy)
+		req := httptest.NewRequest("GET", "/health", nil)
+		rr := httptest.NewRecorder()
+		handlers.Health(rr, req)
 
-	if rrUnhealthy.Code != http.StatusServiceUnavailable {
-		t.Errorf("Expected status code %d for unhealthy DB, got %d", http.StatusServiceUnavailable, rrUnhealthy.Code)
-	}
+		if rr.Code != http.StatusServiceUnavailable {
+			t.Errorf("Expected status code %d, got %d", http.StatusServiceUnavailable, rr.Code)
+		}
 
-	var respUnhealthy map[string]string
-	if err := json.NewDecoder(rrUnhealthy.Body).Decode(&respUnhealthy); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
+		var resp map[string]interface{}
+		if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
 
-	if respUnhealthy["status"] != "unhealthy" {
-		t.Errorf("Expected status 'unhealthy', got %v", respUnhealthy["status"])
-	}
-	if respUnhealthy["error"] != "database connection failed" {
-		t.Errorf("Expected error 'database connection failed', got %v", respUnhealthy["error"])
-	}
+		if resp["status"] != "unhealthy" {
+			t.Errorf("Expected status 'unhealthy', got %v", resp["status"])
+		}
+
+		components := resp["components"].(map[string]interface{})
+		if components["database"] != "down" || components["redis"] != "up" {
+			t.Errorf("Expected database down and redis up, got %v", resp["components"])
+		}
+	})
+
+	t.Run("Redis Unhealthy", func(t *testing.T) {
+		handlers := NewHandlers(
+			mockRepo,
+			&mockDB{pingFunc: func(context.Context) error { return nil }},
+			&mockRedisPingable{pingFunc: func(ctx context.Context) *redis.StatusCmd {
+				return redis.NewStatusResult("", errors.New("redis connection timeout"))
+			}},
+			"http://localhost:8080",
+		)
+
+		req := httptest.NewRequest("GET", "/health", nil)
+		rr := httptest.NewRecorder()
+		handlers.Health(rr, req)
+
+		if rr.Code != http.StatusServiceUnavailable {
+			t.Errorf("Expected status code %d, got %d", http.StatusServiceUnavailable, rr.Code)
+		}
+
+		var resp map[string]interface{}
+		if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		if resp["status"] != "unhealthy" {
+			t.Errorf("Expected status 'unhealthy', got %v", resp["status"])
+		}
+
+		components := resp["components"].(map[string]interface{})
+		if components["database"] != "up" || components["redis"] != "down" {
+			t.Errorf("Expected database up and redis down, got %v", resp["components"])
+		}
+	})
 }
 
 func TestIndexHandler(t *testing.T) {
 	mockRepo := &MockURLRepository{}
-	handlers := NewHandlers(mockRepo, nil, "http://localhost:8080")
+	handlers := NewHandlers(mockRepo, nil, nil, "http://localhost:8080")
 
 	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
@@ -119,7 +188,7 @@ func TestShortenHandlerValidation(t *testing.T) {
 		},
 	}
 
-	handlers := NewHandlers(mockRepo, nil, "http://localhost:8080")
+	handlers := NewHandlers(mockRepo, nil, nil, "http://localhost:8080")
 
 	body := `{"original_url": ""}`
 	req := httptest.NewRequest("POST", "/shorten", strings.NewReader(body))

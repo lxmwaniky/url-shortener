@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/redis/go-redis/v9"
 	"github.com/lxmwaniky/url-shortener/internal/repository"
 )
 
@@ -31,16 +32,22 @@ type DBConnection interface {
 	PingContext(ctx context.Context) error
 }
 
+type RedisPingable interface {
+	Ping(ctx context.Context) *redis.StatusCmd
+}
+
 type Handlers struct {
 	repo    repository.URLRepository
 	db      DBConnection
+	rdb     RedisPingable
 	baseURI string
 }
 
-func NewHandlers(repo repository.URLRepository, db DBConnection, baseURI string) *Handlers {
+func NewHandlers(repo repository.URLRepository, db DBConnection, rdb RedisPingable, baseURI string) *Handlers {
 	return &Handlers{
 		repo:    repo,
 		db:      db,
+		rdb:     rdb,
 		baseURI: baseURI,
 	}
 }
@@ -170,13 +177,33 @@ func (h *Handlers) Redirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {
-	if err := h.db.PingContext(r.Context()); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(map[string]string{"status": "unhealthy", "error": err.Error()})
-		return
-	}
+	ctx := r.Context()
+	dbErr := h.db.PingContext(ctx)
+	rdbErr := h.rdb.Ping(ctx).Err()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+
+	status := "healthy"
+	components := map[string]string{
+		"database": "up",
+		"redis":    "up",
+	}
+
+	if dbErr != nil {
+		status = "unhealthy"
+		components["database"] = "down"
+	}
+	if rdbErr != nil {
+		status = "unhealthy"
+		components["redis"] = "down"
+	}
+
+	if status == "unhealthy" {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":     status,
+		"components": components,
+	})
 }

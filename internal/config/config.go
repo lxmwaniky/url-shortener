@@ -16,21 +16,26 @@ var (
 )
 
 type Config struct {
-	Port            string
-	Env             string
-	DBHost          string
-	DBPort          string
-	DBUser          string
-	DBPassword      string
-	DBName          string
-	DBSSLMode       string
-	FeistelSeed     uint32
-	CleanupInterval string
-	BaseURL         string
-	RedisHost       string
-	RedisPort       string
-	RedisPassword   string
-	RedisDB         int
+	Port              string
+	Env               string
+	DBHost            string
+	DBPort            string
+	DBUser            string
+	DBPassword        string
+	DBName            string
+	DBSSLMode         string
+	FeistelSeed       uint32
+	CleanupInterval   string
+	BaseURL           string
+	RedisHost         string
+	RedisPort         string
+	RedisPassword     string
+	RedisDB           int
+	RedisPoolSize     int
+	RedisMinIdleConns int
+	RedisDialTimeout  time.Duration
+	RedisReadTimeout  time.Duration
+	RedisWriteTimeout time.Duration
 }
 
 func Load() (*Config, error) {
@@ -99,24 +104,59 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid REDIS_DB: %w", err)
 	}
 
+	redisPoolSizeStr := getEnv("REDIS_POOL_SIZE", "0")
+	redisPoolSize, err := strconv.Atoi(redisPoolSizeStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid REDIS_POOL_SIZE: %w", err)
+	}
+
+	redisMinIdleConnsStr := getEnv("REDIS_MIN_IDLE_CONNS", "0")
+	redisMinIdleConns, err := strconv.Atoi(redisMinIdleConnsStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid REDIS_MIN_IDLE_CONNS: %w", err)
+	}
+
+	redisDialTimeoutStr := getEnv("REDIS_DIAL_TIMEOUT", "5s")
+	redisDialTimeout, err := time.ParseDuration(redisDialTimeoutStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid REDIS_DIAL_TIMEOUT: %w", err)
+	}
+
+	redisReadTimeoutStr := getEnv("REDIS_READ_TIMEOUT", "3s")
+	redisReadTimeout, err := time.ParseDuration(redisReadTimeoutStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid REDIS_READ_TIMEOUT: %w", err)
+	}
+
+	redisWriteTimeoutStr := getEnv("REDIS_WRITE_TIMEOUT", "3s")
+	redisWriteTimeout, err := time.ParseDuration(redisWriteTimeoutStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid REDIS_WRITE_TIMEOUT: %w", err)
+	}
+
 	baseURL := getEnv("BASE_URL", "http://localhost:"+port)
 
 	return &Config{
-		Port:            port,
-		Env:             env,
-		DBHost:          dbHost,
-		DBPort:          dbPort,
-		DBUser:          dbUser,
-		DBPassword:      dbPassword,
-		DBName:          dbName,
-		DBSSLMode:       dbSSLMode,
-		FeistelSeed:     uint32(seed),
-		CleanupInterval: cleanupInterval,
-		BaseURL:         baseURL,
-		RedisHost:       redisHost,
-		RedisPort:       redisPort,
-		RedisPassword:   redisPassword,
-		RedisDB:         redisDB,
+		Port:              port,
+		Env:               env,
+		DBHost:            dbHost,
+		DBPort:            dbPort,
+		DBUser:            dbUser,
+		DBPassword:        dbPassword,
+		DBName:            dbName,
+		DBSSLMode:         dbSSLMode,
+		FeistelSeed:       uint32(seed),
+		CleanupInterval:   cleanupInterval,
+		BaseURL:           baseURL,
+		RedisHost:         redisHost,
+		RedisPort:         redisPort,
+		RedisPassword:     redisPassword,
+		RedisDB:           redisDB,
+		RedisPoolSize:     redisPoolSize,
+		RedisMinIdleConns: redisMinIdleConns,
+		RedisDialTimeout:  redisDialTimeout,
+		RedisReadTimeout:  redisReadTimeout,
+		RedisWriteTimeout: redisWriteTimeout,
 	}, nil
 }
 

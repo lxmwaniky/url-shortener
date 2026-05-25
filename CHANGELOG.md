@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Integrated **Singleflight** pattern (`golang.org/x/sync/singleflight`) in `CachedURLRepository` to eliminate cache stampedes (thundering herd problem) under high concurrent cache misses.
+- Introduced customizable Redis connection pool options (`REDIS_POOL_SIZE`, `REDIS_MIN_IDLE_CONNS`) and strict network timeouts (`REDIS_DIAL_TIMEOUT`, `REDIS_READ_TIMEOUT`, `REDIS_WRITE_TIMEOUT`) to prevent connection leaks and starvation.
+- Declared decoupled `RedisPingable` interface inside `internal/web/handlers.go` and implemented a composite, zero-allocation `/health` endpoint checking both Postgres and Redis status.
+- Added extensive mock-based unit tests for the composite health checker in `internal/web/handlers_test.go`.
+- Added dynamic SRE configurations to `.env` and `.example.env` for memory limits, eviction policies, pooling, and connection timeouts.
+
 ### Changed
 - Refactored `cmd/api/main.go` to connect to Redis, decorate the URL repository with caching, and wire up `RedisRateLimiter` instances to read and write endpoints.
 - Upgraded the configuration loader in `internal/config/config.go` and `.example.env` with type-safe Redis parameters (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`).
 - Swapped the concrete `IPRateLimiter` in the `RateLimit` middleware with the polymorphic `Limiter` interface.
 - Changed Go module path and all internal project imports from `gitlab.com/lxmwaniky/url-shortener` to `github.com/lxmwaniky/url-shortener` to completely decouple the codebase from GitLab.
 - Decoupled the API redirection base URI from hardcoded production checks, loading it dynamically via a `BASE_URL` environment configuration parameter with an automatic local fallback based on active ports.
+- Configured production Redis memory constraints (`--maxmemory 256mb`) and cache eviction rules (`--maxmemory-policy allkeys-lru`) dynamically under `docker-compose.yml` to prevent OOM termination.
 
 ### Removed
 - Removed `.gitlab-ci.yml` and all references to GitLab from the project configuration and remote mappings.

@@ -16,7 +16,7 @@ services:
     image: redis:7.4-alpine
     container_name: redis_container
     restart: always
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory ${REDIS_MAX_MEMORY:-256mb} --maxmemory-policy ${REDIS_MAX_MEMORY_POLICY:-allkeys-lru}
     ports:
       - "6379:6379"
     volumes:
