@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/sync/singleflight"
 	"github.com/lxmwaniky/url-shortener/internal/models"
 )
 
@@ -14,6 +15,7 @@ type CachedURLRepository struct {
 	postgresRepo URLRepository
 	rdb          *redis.Client
 	defaultTTL   time.Duration
+	sfGroup      singleflight.Group
 }
 
 func NewCachedURLRepository(postgresRepo URLRepository, rdb *redis.Client, defaultTTL time.Duration) *CachedURLRepository {
@@ -52,10 +54,14 @@ func (r *CachedURLRepository) GetByShortCode(ctx context.Context, code string) (
 		}
 	}
 
-	urlInfo, err := r.postgresRepo.GetByShortCode(ctx, code)
+	dbVal, err, _ := r.sfGroup.Do(code, func() (interface{}, error) {
+		return r.postgresRepo.GetByShortCode(ctx, code)
+	})
 	if err != nil {
 		return nil, err
 	}
+
+	urlInfo := dbVal.(*models.URL)
 
 	ttl := r.getTTL(urlInfo)
 	if ttl > 0 {
