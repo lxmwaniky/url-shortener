@@ -106,7 +106,7 @@ func SecurityHeaders(next http.Handler) http.Handler {
 	})
 }
 
-func RateLimit(limiter *IPRateLimiter) func(http.Handler) http.Handler {
+func RateLimit(limiter Limiter) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip, _, _ := net.SplitHostPort(r.RemoteAddr)

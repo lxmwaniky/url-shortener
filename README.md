@@ -12,11 +12,22 @@ Unlike traditional URL shorteners that generate random strings and handle databa
 
 ```mermaid
 graph TD
-    A[Long URL Input] --> B[Validate & Protect SSRF]
-    B --> C[Insert to DB & Get Sequential ID]
-    C --> D[4-Round Feistel Cipher Obfuscation]
-    D --> E[Base62 Encoding]
-    E --> F[Short URL Output]
+    subgraph Write Path
+        A[Long URL Input] --> B[Validate & Protect SSRF]
+        B --> C[Insert to DB & Get Sequential ID]
+        C --> D[4-Round Feistel Cipher Obfuscation]
+        D --> E[Base62 Encoding]
+        E --> F[Pre-warm Redis Cache]
+        F --> G[Short URL Output]
+    end
+
+    subgraph Read Path
+        H[GET /code] --> I[Redis Cache Look-up]
+        I -- Cache Hit --> J[302 Redirect]
+        I -- Cache Miss --> K[DB Read Query]
+        K --> L[Populate Redis Cache]
+        L --> J
+    end
 ```
 
 ### 1. Zero-Collision ID Obfuscation
@@ -30,10 +41,17 @@ graph TD
 ### 3. Server-Side Request Forgery (SSRF) Protection
 * The web handlers validate incoming hosts prior to shortening. Loopback addresses, private networks, and internal DNS names (such as `localhost` or `192.168.x.x`) are automatically blocked to secure your internal infrastructure.
 
-### 4. IP-Based Token Bucket Rate Limiting
-* To protect the service from abuse, a custom in-memory token bucket rate limiter throttles traffic. Read and write limits are isolated per client IP to ensure search spiders cannot starve resource creation.
+### 4. High-Performance Redis Caching (Decorator Pattern)
+* To achieve sub-millisecond redirect read response times, a repository decorator pattern wraps the database access.
+* **Pre-warming on Create**: Newly created URL entries are immediately pre-warmed into Redis.
+* **Dynamic Expire Synchronization**: Cache lifetimes (TTLs) are aligned dynamically to the precise database `ExpiresAt` value.
+* **Pass-through Fallback**: If a cache miss occurs, the Postgres repository handles the lookup and backfills Redis.
 
-### 5. Automated SRE Cleanup
+### 5. Distributed Rate Limiting (TxPipeline)
+* To protect the service from abuse in a distributed cluster, rate limiting is handled by a polymorphic middleware.
+* The Redis implementation executes a pipelined transaction (`TxPipeline`) to perform atomic increments and expiration sets in a single round-trip, minimizing latency and connection overhead.
+
+### 6. Automated SRE Cleanup
 * An asynchronous background worker executes periodically to purge expired URLs from the database, maintaining database index performance.
 
 ---
@@ -43,6 +61,7 @@ graph TD
 * **Language**: Go 1.22+
 * **Router**: Go Chi v5 (Lightweight, idiomatic routing)
 * **Database**: PostgreSQL 17 (With robust database connection pooling)
+* **Caching & Rate Limiting**: Redis 7.4 (With transaction-safe pipelines)
 * **Environment Configuration**: Go-dotenv (Recursive parent-directory resolution)
 
 ---
@@ -55,8 +74,8 @@ Copy the example environment configuration:
 cp .example.env .env
 ```
 
-### 2. Start PostgreSQL
-Run the database service:
+### 2. Start PostgreSQL and Redis
+Run the Docker Compose stack:
 ```bash
 docker compose up -d
 ```
@@ -65,7 +84,7 @@ docker compose up -d
 ```bash
 go run cmd/api/main.go
 ```
-The server will automatically apply pending schema migrations and listen on port `8080`.
+The server will automatically apply pending schema migrations, connect to Redis, and listen on port `8080`.
 
 ---
 

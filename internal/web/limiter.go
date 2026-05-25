@@ -59,9 +59,13 @@ func (l *IPRateLimiter) Allow(ip string) bool {
 	return false
 }
 
+type Limiter interface {
+	Allow(ip string) bool
+}
+
 type MultiLimiter struct {
-	WriteLimiter *IPRateLimiter
-	ReadLimiter  *IPRateLimiter
+	WriteLimiter Limiter
+	ReadLimiter  Limiter
 }
 
 func NewMultiLimiter(writeLimit int, writePeriod time.Duration, readLimit int, readPeriod time.Duration) *MultiLimiter {

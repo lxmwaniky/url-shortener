@@ -66,13 +66,23 @@ func main() {
 		}
 	}()
 
+	slog.Info("connecting to redis")
+	redisClient, err := db.ConnectRedis(cfg)
+	if err != nil {
+		slog.Error("failed to connect to redis", "error", err)
+		os.Exit(1)
+	}
+	defer redisClient.Close()
+
 	feistel := service.NewFeistel(cfg.FeistelSeed)
 	encoder := service.NewBase62Encoder()
-	repo := repository.NewPostgresURLRepository(database, feistel, encoder)
+	postgresRepo := repository.NewPostgresURLRepository(database, feistel, encoder)
+	repo := repository.NewCachedURLRepository(postgresRepo, redisClient, 24*time.Hour)
 
 	handlers := web.NewHandlers(repo, database, cfg.BaseURL)
 
-	multiLimiter := web.NewMultiLimiter(10, 1*time.Minute, 100, 1*time.Minute)
+	writeLimiter := web.NewRedisRateLimiter(redisClient, 10, 1*time.Minute, "write")
+	readLimiter := web.NewRedisRateLimiter(redisClient, 100, 1*time.Minute, "read")
 
 	r := chi.NewRouter()
 	r.Use(web.Recovery)
@@ -82,9 +92,9 @@ func main() {
 
 	r.Get("/", handlers.Index)
 	r.Get("/health", handlers.Health)
-	r.With(web.RateLimit(multiLimiter.ReadLimiter)).Get("/{code}", handlers.Redirect)
+	r.With(web.RateLimit(readLimiter)).Get("/{code}", handlers.Redirect)
 
-	r.With(web.RateLimit(multiLimiter.WriteLimiter)).Post("/shorten", handlers.Shorten)
+	r.With(web.RateLimit(writeLimiter)).Post("/shorten", handlers.Shorten)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
