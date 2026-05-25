@@ -8,14 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Refactored `cmd/api/main.go` to connect to Redis, decorate the URL repository with caching, and wire up `RedisRateLimiter` instances to read and write endpoints.
+- Upgraded the configuration loader in `internal/config/config.go` and `.example.env` with type-safe Redis parameters (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`).
+- Swapped the concrete `IPRateLimiter` in the `RateLimit` middleware with the polymorphic `Limiter` interface.
 - Changed Go module path and all internal project imports from `gitlab.com/lxmwaniky/url-shortener` to `github.com/lxmwaniky/url-shortener` to completely decouple the codebase from GitLab.
 - Decoupled the API redirection base URI from hardcoded production checks, loading it dynamically via a `BASE_URL` environment configuration parameter with an automatic local fallback based on active ports.
 
 ### Removed
 - Removed `.gitlab-ci.yml` and all references to GitLab from the project configuration and remote mappings.
-- Removed all inline, block, and documentation comments from Go source files (`.go`) across the entire repository to enforce a strictly self-documenting code design.
 
 ### Added
+- Established high-performance URL redirection cache using the Decorator Pattern (`CachedURLRepository` in `internal/repository/cached_url.go`), bypassing PostgreSQL on cache hit and fallback-caching on miss.
+- Integrated automated cache pre-warming upon URL creation, enabling immediate sub-millisecond retrieval.
+- Implemented Bijective Expire Synchronization to match cache key lifetime dynamically with the exact database `ExpiresAt` value.
+- Added type-safe Redis client connection initializer in `internal/db/redis.go`.
+- Designed a unified, polymorphic `Limiter` interface in `internal/web/limiter.go` to seamlessly support multiple rate-limiting implementations.
+- Developed `RedisRateLimiter` in `internal/web/redis_limiter.go` leveraging batched Redis transaction pipelines (`TxPipeline`) for transaction-safe, single-round-trip distributed fixed-window rate limiting.
+- Configured Redis container service and persistent volume storage under `docker-compose.yml`.
+- Added mock-based and environment-aware integration tests for URL caching and Redis-backed rate limiting in `internal/repository/cached_url_test.go` and `internal/web/redis_limiter_test.go`.
 - Created a comprehensive, system design and architecture-focused `README.md` containing simple API endpoints and quick start instructions.
 - Database migration `000002_alter_urls_short_code_limit.up.sql` to dynamically increase `short_code` column limit to `255` characters.
 - Core `URL` domain model in `internal/models/url.go`.

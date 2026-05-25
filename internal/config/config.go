@@ -16,17 +16,21 @@ var (
 )
 
 type Config struct {
-	Port        string
-	Env         string
-	DBHost      string
-	DBPort      string
-	DBUser      string
-	DBPassword  string
-	DBName      string
-	DBSSLMode   string
-	FeistelSeed uint32
+	Port            string
+	Env             string
+	DBHost          string
+	DBPort          string
+	DBUser          string
+	DBPassword      string
+	DBName          string
+	DBSSLMode       string
+	FeistelSeed     uint32
 	CleanupInterval string
-	BaseURL string
+	BaseURL         string
+	RedisHost       string
+	RedisPort       string
+	RedisPassword   string
+	RedisDB         int
 }
 
 func Load() (*Config, error) {
@@ -81,20 +85,38 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid CLEANUP_INTERVAL: must be a valid duration string: %w", err)
 	}
 
+	redisHost := getEnv("REDIS_HOST", "localhost")
+	redisPort := getEnv("REDIS_PORT", "6379")
+	if err := validatePort(redisPort); err != nil {
+		return nil, fmt.Errorf("invalid REDIS_PORT: %w", err)
+	}
+
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+
+	redisDBStr := getEnv("REDIS_DB", "0")
+	redisDB, err := strconv.Atoi(redisDBStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid REDIS_DB: %w", err)
+	}
+
 	baseURL := getEnv("BASE_URL", "http://localhost:"+port)
 
 	return &Config{
-		Port:             port,
-		Env:              env,
-		DBHost:           dbHost,
-		DBPort:           dbPort,
-		DBUser:           dbUser,
-		DBPassword:       dbPassword,
-		DBName:           dbName,
-		DBSSLMode:        dbSSLMode,
-		FeistelSeed:      uint32(seed),
-		CleanupInterval:  cleanupInterval,
-		BaseURL:          baseURL,
+		Port:            port,
+		Env:             env,
+		DBHost:          dbHost,
+		DBPort:          dbPort,
+		DBUser:          dbUser,
+		DBPassword:      dbPassword,
+		DBName:          dbName,
+		DBSSLMode:       dbSSLMode,
+		FeistelSeed:     uint32(seed),
+		CleanupInterval: cleanupInterval,
+		BaseURL:         baseURL,
+		RedisHost:       redisHost,
+		RedisPort:       redisPort,
+		RedisPassword:   redisPassword,
+		RedisDB:         redisDB,
 	}, nil
 }
 
