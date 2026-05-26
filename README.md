@@ -66,42 +66,51 @@ graph TD
 ### 8. Composite Health Checking
 * The `/health` endpoint performs asynchronous, concurrent pings to both PostgreSQL and Redis databases. If either component fails to reply within the timeout threshold, a detailed status response is returned alongside a `503 Service Unavailable` status code to allow automated load balancers to isolate degraded app instances instantly.
 
-### 9. DevOps Memory Isolation
-* The containerized Redis setup is configured inside `docker-compose.yml` with strict runtime limits:
-  * **Memory Limits**: Max memory capped to `256mb` (configurable via `REDIS_MAX_MEMORY`) to prevent host memory exhaustion and container termination.
-  * **Eviction Policy**: Configured with `allkeys-lru` (least-recently-used) memory eviction to dynamically drop older entries and prevent system halts under extreme cache pressure.
+### 9. Multi-Stage Containerization & Security
+* The application enforces modern cloud-native container standards:
+  * **Multi-Stage Build**: Keeps the runtime image extremely minimal (~22MB) by excluding compilation tooling, shrinking the attack surface.
+  * **Non-Root Execution**: Runs under a dedicated, unprivileged custom service account (`USER appuser`) to block container-escape host takeovers.
+  * **Service Healthchecks**: Uses `pg_isready` and `redis-cli ping` within Docker Compose to prevent startup race conditions—the API node waits until database services are fully functional (`service_healthy`) before booting.
 
 ---
 
 ## Technology Stack
 
-* **Language**: Go 1.22+
+* **Language**: Go 1.26+
 * **Router**: Go Chi v5 (Lightweight, idiomatic routing)
 * **Database**: PostgreSQL 17 (With robust database connection pooling)
 * **Caching & Rate Limiting**: Redis 7.4 (With SRE timeout controls and transaction-safe pipelines)
-* **Environment Configuration**: Go-dotenv (Recursive parent-directory resolution)
+* **Containerization**: Docker & Docker Compose (Multi-stage, unprivileged, health-checked orchestration)
 
 ---
 
 ## Quick Start
 
-### 1. Clone & Setup Environment
+### 1. Setup Environment
 Copy the example environment configuration:
 ```bash
 cp .example.env .env
 ```
 
-### 2. Start PostgreSQL and Redis
-Run the Docker Compose stack:
-```bash
-docker compose up -d
-```
+Now, choose your preferred running strategy:
 
-### 3. Start the API Server
+### Option A: Fully Containerized Stack (Recommended)
+This boots the entire application, database, and caching stack inside isolated Docker containers.
 ```bash
-go run cmd/api/main.go
+docker compose up --build -d
 ```
-The server will automatically apply pending schema migrations, connect to Redis, and listen on port `8080`.
+Docker Compose will verify PostgreSQL and Redis health, boot up the Go API once ready, and route port `8080` to your host machine.
+
+### Option B: Hybrid Local Development
+Use this strategy if you want to run database engines in Docker, but run and edit the Go source directly on your host machine.
+1. Start PostgreSQL and Redis:
+   ```bash
+   docker compose up db redis -d
+   ```
+2. Start the API Server:
+   ```bash
+   go run cmd/api/main.go
+   ```
 
 ---
 

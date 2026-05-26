@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Introduced a multi-stage, secure `Dockerfile` and `.dockerignore` utilizing non-root user execution (`USER appuser`) for extremely small, minimal runtime footprint (~22MB) and strong container security.
+- Added active Docker `healthcheck` scripts (using `pg_isready` and `redis-cli ping`) inside `docker-compose.yml` coupled with long-form `depends_on` wait conditions to ensure the application waits until dependent databases are healthy before booting.
 - Integrated **Singleflight** pattern (`golang.org/x/sync/singleflight`) in `CachedURLRepository` to eliminate cache stampedes (thundering herd problem) under high concurrent cache misses.
 - Introduced customizable Redis connection pool options (`REDIS_POOL_SIZE`, `REDIS_MIN_IDLE_CONNS`) and strict network timeouts (`REDIS_DIAL_TIMEOUT`, `REDIS_READ_TIMEOUT`, `REDIS_WRITE_TIMEOUT`) to prevent connection leaks and starvation.
 - Declared decoupled `RedisPingable` interface inside `internal/web/handlers.go` and implemented a composite, zero-allocation `/health` endpoint checking both Postgres and Redis status.
