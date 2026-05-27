@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Created modular, clean, and isolated GitHub Actions CI/CD workflows under `.github/workflows/` (`lint.yml`, `security.yml`, `test.yml`) replacing the old consolidated pipeline.
+- Decoupled database and Redis integration tests using Go Build Tags (`//go:build integration`), completely removing external container dependencies from the main build and test pipeline.
 - Introduced a multi-stage, secure `Dockerfile` and `.dockerignore` utilizing non-root user execution (`USER appuser`) for extremely small, minimal runtime footprint (~22MB) and strong container security.
 - Added active Docker `healthcheck` scripts (using `pg_isready` and `redis-cli ping`) inside `docker-compose.yml` coupled with long-form `depends_on` wait conditions to ensure the application waits until dependent databases are healthy before booting.
 - Integrated **Singleflight** pattern (`golang.org/x/sync/singleflight`) in `CachedURLRepository` to eliminate cache stampedes (thundering herd problem) under high concurrent cache misses.
@@ -17,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added dynamic SRE configurations to `.env` and `.example.env` for memory limits, eviction policies, pooling, and connection timeouts.
 
 ### Changed
+- Streamlined `test.yml` into a lightweight, high-performance workflow executing unit tests and production compilation in under 2 seconds.
+- Upgraded the linter tool version to `latest` inside `lint.yml` to automatically execute a version of `golangci-lint` built with Go 1.26.x, matching the targeted Go version declared in `go.mod`.
 - Refactored `cmd/api/main.go` to connect to Redis, decorate the URL repository with caching, and wire up `RedisRateLimiter` instances to read and write endpoints.
 - Upgraded the configuration loader in `internal/config/config.go` and `.example.env` with type-safe Redis parameters (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`).
 - Swapped the concrete `IPRateLimiter` in the `RateLimit` middleware with the polymorphic `Limiter` interface.

@@ -1,4 +1,7 @@
+//go:build integration
+
 package web
+
 
 import (
 	"context"
