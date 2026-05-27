@@ -63,7 +63,7 @@ func (r *PostgresURLRepository) Create(ctx context.Context, originalURL string, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var id uint64
 	err = tx.QueryRowContext(ctx, "SELECT nextval('urls_id_seq')").Scan(&id)

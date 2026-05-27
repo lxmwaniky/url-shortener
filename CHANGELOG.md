@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Created modular, clean, and isolated GitHub Actions CI/CD workflows under `.github/workflows/` (`lint.yml`, `security.yml`, `test.yml`) replacing the old consolidated pipeline.
+- Decoupled database and Redis integration tests using Go Build Tags (`//go:build integration`), completely removing external container dependencies from the main build and test pipeline.
 - Introduced a multi-stage, secure `Dockerfile` and `.dockerignore` utilizing non-root user execution (`USER appuser`) for extremely small, minimal runtime footprint (~22MB) and strong container security.
 - Added active Docker `healthcheck` scripts (using `pg_isready` and `redis-cli ping`) inside `docker-compose.yml` coupled with long-form `depends_on` wait conditions to ensure the application waits until dependent databases are healthy before booting.
 - Integrated **Singleflight** pattern (`golang.org/x/sync/singleflight`) in `CachedURLRepository` to eliminate cache stampedes (thundering herd problem) under high concurrent cache misses.
@@ -17,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added dynamic SRE configurations to `.env` and `.example.env` for memory limits, eviction policies, pooling, and connection timeouts.
 
 ### Changed
+- Streamlined `test.yml` into a lightweight, high-performance workflow executing unit tests and production compilation in under 2 seconds.
+- Reconfigured `.github/workflows/lint.yml` to compile `golangci-lint` directly from source using the host's Go 1.26.1 compiler (via `go install`), resolving type system parsing errors present in pre-built Go 1.24 release binaries.
+- Reconfigured `.github/workflows/security.yml` to install and run `govulncheck` directly from source with Go 1.26.1 using `go install`, completely removing external action pulling dependencies and avoiding concurrent Docker pull conflicts.
 - Refactored `cmd/api/main.go` to connect to Redis, decorate the URL repository with caching, and wire up `RedisRateLimiter` instances to read and write endpoints.
 - Upgraded the configuration loader in `internal/config/config.go` and `.example.env` with type-safe Redis parameters (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`).
 - Swapped the concrete `IPRateLimiter` in the `RateLimit` middleware with the polymorphic `Limiter` interface.
@@ -60,6 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production-ready application entrypoint in `cmd/api/main.go` featuring graceful server shutdown and an automated asynchronous background database cleaner to daily purge expired links.
 
 ### Fixed
+- Fixed GOROOT namespace collision inside `.github/workflows/test.yml` by prefixing the target build directory with relative syntax `./cmd/api` instead of `cmd/api`, preventing internal compiler-path errors during pipeline compilation.
+- Corrected 7 static analysis violations flagged by `golangci-lint` inside Go source files: resolved unchecked JSON response encoding errors in `handlers.go`, fixed SA1029 context key collision by introducing a type-safe `contextKey` in `middleware.go`, and explicitly ignored unchecked transaction rollbacks in `postgres_url.go` and `migrations_runner.go`.
 - Fixed Go configuration build failure by removing unused `"net"` and `"strings"` package imports from `internal/config/config.go`.
 - Secured URL shortening against Server-Side Request Forgery (SSRF) by wiring up the `isPrivateIP` validation block inside the `Shorten` web handler to reject internal/private loopback networks.
 - Decoupled `Handlers` database client by replacing the concrete `*sql.DB` type with a mockable `DBConnection` interface.

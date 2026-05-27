@@ -101,7 +101,9 @@ func (h *Handlers) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(endpoints)
+	if err := json.NewEncoder(w).Encode(endpoints); err != nil {
+		slog.Error("failed to encode endpoints", "error", err)
+	}
 }
 
 func (h *Handlers) Shorten(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +149,9 @@ func (h *Handlers) Shorten(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		slog.Error("failed to encode response", "error", err)
+	}
 }
 
 func (h *Handlers) Redirect(w http.ResponseWriter, r *http.Request) {
@@ -202,8 +206,10 @@ func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":     status,
 		"components": components,
-	})
+	}); err != nil {
+		slog.Error("failed to encode health status", "error", err)
+	}
 }

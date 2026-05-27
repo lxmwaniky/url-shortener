@@ -1,4 +1,7 @@
+//go:build integration
+
 package db
+
 
 import (
 	"context"
