@@ -24,5 +24,5 @@ jobs:
         run: |
           go mod download
           go test -v ./...
-          go build -o main cmd/api
+          go build -o main ./cmd/api
 

@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+type contextKey string
+
+const requestIDKey contextKey = "requestID"
+
 type responseWriter struct {
 	http.ResponseWriter
 	status int
@@ -42,7 +46,7 @@ func RequestID(next http.Handler) http.Handler {
 		}
 
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, "requestID", requestID)
+		ctx = context.WithValue(ctx, requestIDKey, requestID)
 		r = r.WithContext(ctx)
 
 		w.Header().Set("X-Request-ID", requestID)
@@ -60,7 +64,7 @@ func Logger(next http.Handler) http.Handler {
 
 		duration := time.Since(start)
 		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-		requestID := r.Context().Value("requestID")
+		requestID := r.Context().Value(requestIDKey)
 		if requestID == nil {
 			requestID = "unknown"
 		}
@@ -80,7 +84,7 @@ func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				requestID := r.Context().Value("requestID")
+				requestID := r.Context().Value(requestIDKey)
 				if requestID == nil {
 					requestID = "unknown"
 				}
