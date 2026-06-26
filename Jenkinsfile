@@ -5,6 +5,10 @@ pipeline {
             args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
+    environment {
+        GOCACHE = "${WORKSPACE}/.cache/go-build"
+        GOPATH  = "${WORKSPACE}/.go"
+    }
     stages {
         stage('Linting') {
             steps {
