@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/lxmwaniky/url-shortener/internal/models"
+	"github.com/redis/go-redis/v9"
 )
 
 type mockRedisPingable struct {
