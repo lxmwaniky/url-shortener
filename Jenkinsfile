@@ -2,12 +2,13 @@ pipeline {
     agent {
         docker {
             image 'golang:1.26-alpine'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
+            args '-v /var/run/docker.sock:/var/run/docker.sock --entrypoint='
         }
     }
     environment {
-        GOCACHE = "${WORKSPACE}/.cache/go-build"
-        GOPATH  = "${WORKSPACE}/.go"
+        APP_NAME = "url-shortener"
+        GOCACHE  = "${WORKSPACE}/.cache/go-build"
+        GOPATH   = "${WORKSPACE}/.go"
     }
     stages {
         stage('Linting') {
