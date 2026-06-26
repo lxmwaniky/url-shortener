@@ -1,30 +1,30 @@
 pipeline {
-    agent {
-        docker {
-            image 'golang:1.26-alpine'
-            args '-v /var/run/docker.sock:/var/run/docker.sock --entrypoint='
-        }
-    }
+    agent any
+
     environment {
         APP_NAME = "url-shortener"
-        GOCACHE  = "${WORKSPACE}/.cache/go-build"
-        GOPATH   = "${WORKSPACE}/.go"
     }
+
     stages {
-        stage('Linting') {
+        stage('Checkout Source') {
             steps {
-                sh 'go vet ./...'
+                checkout scm
             }
         }
-        stage ('test') {
+
+        stage('Build & Test Artifact') {
             steps {
-                sh 'go test ./...'
+                sh "docker build -t ${APP_NAME}:${BUILD_NUMBER} ."
             }
         }
-        stage('Compilation') {
-            steps {
-                sh 'CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/api'
-            }
+    }
+
+    post {
+        success {
+            echo "Successfully verified code state and packaged container image ${APP_NAME}:${BUILD_NUMBER}!"
+        }
+        failure {
+            echo "Build or verification layers failed inside the Docker engine context. Check the log streams above."
         }
     }
 }
