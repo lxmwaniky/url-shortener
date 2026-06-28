@@ -34,14 +34,8 @@ pipeline {
             }
         }
         stage('Build & Push') {
-            agent {
-                docker {
-                    image 'google/cloud-sdk:alpine'
-                    args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
-                }
-            }
+            agent any
             steps {
-                sh 'apk add --no-cache docker-cli'
                 script {
                     env.IMAGE_TAG     = env.GIT_COMMIT.take(7)
                     env.IMAGE_SHA     = "${env.IMAGE_BASE}:sha-${env.IMAGE_TAG}"
@@ -62,9 +56,7 @@ pipeline {
             }
         }
         stage('Deploy Staging') {
-            agent {
-                docker { image 'google/cloud-sdk:alpine' }
-            }
+            agent any
             steps {
                 withCredentials([
                     file(credentialsId: 'gcp-sa-key',            variable: 'GCP_SA_KEY'),
@@ -88,9 +80,7 @@ pipeline {
             }
         }
         stage('Smoke Tests') {
-            agent {
-                docker { image 'google/cloud-sdk:alpine' }
-            }
+            agent any
             steps {
                 withCredentials([file(credentialsId: 'gcp-sa-key', variable: 'GCP_SA_KEY')]) {
                     script {
@@ -130,9 +120,7 @@ pipeline {
         }
 
         stage('Deploy Prod') {
-            agent {
-                docker { image 'google/cloud-sdk:alpine' }
-            }
+            agent any
             steps {
                 withCredentials([
                     file(credentialsId: 'gcp-sa-key',         variable: 'GCP_SA_KEY'),
