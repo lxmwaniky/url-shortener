@@ -21,6 +21,7 @@ pipeline {
             agent {
                 docker {
                     image 'golang:1.26-alpine'
+                    args '-e HOME=/tmp'
                 }
             }
             steps {
@@ -31,6 +32,7 @@ pipeline {
             agent {
                 docker {
                     image 'golang:1.26-alpine'
+                    args '-e HOME=/tmp'
                 }
             }
             steps {
