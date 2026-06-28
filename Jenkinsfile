@@ -61,8 +61,7 @@ pipeline {
                 withCredentials([
                     file(credentialsId: 'gcp-sa-key',            variable: 'GCP_SA_KEY'),
                     string(credentialsId: 'db-staging-password', variable: 'DB_PASSWORD'),
-                    string(credentialsId: 'upstash-staging-url', variable: 'REDIS_URL'),
-                    string(credentialsId: 'app-secret-key',      variable: 'APP_SECRET_KEY')
+                    string(credentialsId: 'upstash-staging-url', variable: 'REDIS_URL')
                 ]) {
                     sh """
                         gcloud auth activate-service-account --key-file=\$GCP_SA_KEY
@@ -74,7 +73,7 @@ pipeline {
                             --project=${PROJECT_ID} \\
                             --allow-unauthenticated \\
                             --add-cloudsql-instances=${DB_CONNECTION_STAGING} \\
-                            --set-env-vars="ENV=staging,DB_HOST=/cloudsql/${DB_CONNECTION_STAGING},DB_PORT=5432,DB_NAME=${DB_NAME},DB_USER=${DB_USER},DB_PASSWORD=\$DB_PASSWORD,REDIS_URL=\$REDIS_URL,APP_SECRET_KEY=\$APP_SECRET_KEY"
+                            --set-env-vars="ENV=staging,DB_HOST=/cloudsql/${DB_CONNECTION_STAGING},DB_PORT=5432,DB_NAME=${DB_NAME},DB_USER=${DB_USER},DB_PASSWORD=\$DB_PASSWORD,REDIS_URL=\$REDIS_URL"
                     """
                 }
             }
@@ -126,7 +125,6 @@ pipeline {
                     file(credentialsId: 'gcp-sa-key',         variable: 'GCP_SA_KEY'),
                     string(credentialsId: 'db-prod-password', variable: 'DB_PASSWORD'),
                     string(credentialsId: 'upstash-prod-url', variable: 'REDIS_URL'),
-                    string(credentialsId: 'app-secret-key',   variable: 'APP_SECRET_KEY')
                 ]) {
                     sh """
                         gcloud auth activate-service-account --key-file=\$GCP_SA_KEY
@@ -143,7 +141,7 @@ pipeline {
                             --project=${PROJECT_ID} \\
                             --allow-unauthenticated \\
                             --add-cloudsql-instances=${DB_CONNECTION_PROD} \\
-                            --set-env-vars="ENV=production,DB_HOST=/cloudsql/${DB_CONNECTION_PROD},DB_PORT=5432,DB_NAME=${DB_NAME},DB_USER=${DB_USER},DB_PASSWORD=\$DB_PASSWORD,REDIS_URL=\$REDIS_URL,APP_SECRET_KEY=\$APP_SECRET_KEY"
+                            --set-env-vars="ENV=production,DB_HOST=/cloudsql/${DB_CONNECTION_PROD},DB_PORT=5432,DB_NAME=${DB_NAME},DB_USER=${DB_USER},DB_PASSWORD=\$DB_PASSWORD,REDIS_URL=\$REDIS_URL"
                     """
                 }
             }
