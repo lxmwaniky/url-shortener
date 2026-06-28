@@ -43,7 +43,7 @@ pipeline {
             agent {
                 docker {
                     image 'google/cloud-sdk:alpine'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                    args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
             steps {
