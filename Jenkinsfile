@@ -47,16 +47,17 @@ pipeline {
                     env.IMAGE_SHA     = "${env.IMAGE_BASE}:sha-${env.IMAGE_TAG}"
                     env.IMAGE_STAGING = "${env.IMAGE_BASE}:staging"
                     env.IMAGE_PROD    = "${env.IMAGE_BASE}:prod"
-                }
-                withCredentials([file(credentialsId: 'gcp-sa-key', variable: 'GCP_SA_KEY')]) {
-                    sh """
-                        gcloud auth activate-service-account --key-file=\$GCP_SA_KEY
-                        gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
-                        docker build -t ${env.IMAGE_SHA} .
-                        docker tag ${env.IMAGE_SHA} ${env.IMAGE_STAGING}
-                        docker push ${env.IMAGE_SHA}
-                        docker push ${env.IMAGE_STAGING}
-                    """
+
+                    withCredentials([file(credentialsId: 'gcp-sa-key', variable: 'GCP_SA_KEY')]) {
+                        sh """
+                    gcloud auth activate-service-account --key-file=\$GCP_SA_KEY
+                    gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+                    docker build -t ${env.IMAGE_SHA} .
+                    docker tag ${env.IMAGE_SHA} ${env.IMAGE_STAGING}
+                    docker push ${env.IMAGE_SHA}
+                    docker push ${env.IMAGE_STAGING}
+                """
+                    }
                 }
             }
         }
