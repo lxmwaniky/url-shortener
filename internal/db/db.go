@@ -10,14 +10,26 @@ import (
 )
 
 func Connect(cfg *config.Config) (*sql.DB, error) {
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		cfg.DBUser,
-		cfg.DBPassword,
-		cfg.DBHost,
-		cfg.DBPort,
-		cfg.DBName,
-		cfg.DBSSLMode,
-	)
+	var dsn string
+
+	if len(cfg.DBHost) > 0 && cfg.DBHost[0] == '/' {
+		dsn = fmt.Sprintf("postgres://%s:%s@localhost/%s?sslmode=%s&host=%s",
+			cfg.DBUser,
+			cfg.DBPassword,
+			cfg.DBName,
+			cfg.DBSSLMode,
+			cfg.DBHost,
+		)
+	} else {
+		dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+			cfg.DBUser,
+			cfg.DBPassword,
+			cfg.DBHost,
+			cfg.DBPort,
+			cfg.DBName,
+			cfg.DBSSLMode,
+		)
+	}
 
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {

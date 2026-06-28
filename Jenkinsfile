@@ -30,7 +30,6 @@ pipeline {
     }
 
     stages {
-
         stage('Vet & Test') {
             agent {
                 docker {
