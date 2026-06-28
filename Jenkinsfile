@@ -21,7 +21,7 @@ pipeline {
             agent {
                 docker {
                     image 'golang:1.26-alpine'
-                    args '-e HOME=/tmp'
+                    args '-e HOME=/tmp -v /tmp/go-mod-cache:/tmp/go-mod-cache -e GOMODCACHE=/tmp/go-mod-cache'
                 }
             }
             steps {
@@ -32,7 +32,7 @@ pipeline {
             agent {
                 docker {
                     image 'golang:1.26-alpine'
-                    args '-e HOME=/tmp'
+                    args '-e HOME=/tmp -v /tmp/go-mod-cache:/tmp/go-mod-cache -e GOMODCACHE=/tmp/go-mod-cache'
                 }
             }
             steps {
