@@ -17,25 +17,19 @@ pipeline {
     }
 
     stages {
-        stage('Vet') {
+        stage('Vet & Test') {
             agent {
                 docker {
                     image 'golang:1.26-alpine'
-                    args '-e HOME=/tmp -v /tmp/go-mod-cache:/tmp/go-mod-cache -e GOMODCACHE=/tmp/go-mod-cache'
+                    args '''-e HOME=/tmp \
+                    -v /tmp/go-mod-cache:/tmp/go-mod-cache \
+                    -e GOMODCACHE=/tmp/go-mod-cache \
+                    -v /tmp/go-build-cache:/tmp/go-build-cache \
+                    -e GOCACHE=/tmp/go-build-cache'''
                 }
             }
             steps {
                 sh 'go vet ./...'
-            }
-        }
-        stage('Test') {
-            agent {
-                docker {
-                    image 'golang:1.26-alpine'
-                    args '-e HOME=/tmp -v /tmp/go-mod-cache:/tmp/go-mod-cache -e GOMODCACHE=/tmp/go-mod-cache'
-                }
-            }
-            steps {
                 sh 'go test -v ./...'
             }
         }
