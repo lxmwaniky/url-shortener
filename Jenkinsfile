@@ -22,10 +22,10 @@ pipeline {
                 docker {
                     image 'golang:1.26-alpine'
                     args '''-e HOME=/tmp \
-                    -v /tmp/go-mod-cache:/tmp/go-mod-cache \
-                    -e GOMODCACHE=/tmp/go-mod-cache \
-                    -v /tmp/go-build-cache:/tmp/go-build-cache \
-                    -e GOCACHE=/tmp/go-build-cache'''
+                            -v /opt/jenkins-cache/go-mod:/tmp/go-mod-cache \
+                            -e GOMODCACHE=/tmp/go-mod-cache \
+                            -v /opt/jenkins-cache/go-build:/tmp/go-build-cache \
+                            -e GOCACHE=/tmp/go-build-cache'''
                 }
             }
             steps {
