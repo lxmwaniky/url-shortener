@@ -43,7 +43,7 @@ pipeline {
             steps {
                 sh 'apk add --no-cache docker-cli'
                 script {
-                    env.IMAGE_TAG     = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.IMAGE_TAG     = env.GIT_COMMIT.take(7)
                     env.IMAGE_SHA     = "${env.IMAGE_BASE}:sha-${env.IMAGE_TAG}"
                     env.IMAGE_STAGING = "${env.IMAGE_BASE}:staging"
                     env.IMAGE_PROD    = "${env.IMAGE_BASE}:prod"
