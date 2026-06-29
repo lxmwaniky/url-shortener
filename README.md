@@ -12,26 +12,6 @@ A robust, production-ready URL shortener API that converts long URLs into short,
 
 Unlike traditional URL shorteners that generate random strings and handle database collisions via expensive retry loops, this service uses a mathematically guaranteed, zero-collision pipeline.
 
-```mermaid
-graph TD
-    subgraph Write Path
-        A[Long URL Input] --> B[Validate & Protect SSRF]
-        B --> C[Insert to DB & Get Sequential ID]
-        C --> D[4-Round Feistel Cipher Obfuscation]
-        D --> E[Base62 Encoding]
-        E --> F[Pre-warm Redis Cache]
-        F --> G[Short URL Output]
-    end
-
-    subgraph Read Path
-        H[GET /code] --> I[Redis Cache Look-up]
-        I -- Cache Hit --> J[302 Redirect]
-        I -- Cache Miss --> SF[Singleflight Coalescing]
-        SF --> K[DB Read Query]
-        K --> L[Populate Redis Cache]
-        L --> J
-    end
-```
 
 ### 1. Zero-Collision ID Obfuscation
 * **Sequential Database IDs**: When a long URL is shortened, PostgreSQL allocates a unique, auto-incrementing 64-bit integer (`bigint`).

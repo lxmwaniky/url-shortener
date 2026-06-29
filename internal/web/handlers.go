@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/redis/go-redis/v9"
 	"github.com/lxmwaniky/url-shortener/internal/repository"
+	"github.com/redis/go-redis/v9"
 )
 
 type ShortenRequest struct {
@@ -93,10 +93,10 @@ func (h *Handlers) Index(w http.ResponseWriter, r *http.Request) {
 	endpoints := map[string]interface{}{
 		"service": "url-shortener",
 		"endpoints": map[string]string{
-			"GET /":        "Show available service endpoints",
-			"GET /health":  "Database connectivity and SRE health check",
+			"GET /":         "Show available service endpoints",
+			"GET /health":   "Database connectivity and SRE health check",
 			"POST /shorten": "Shorten a long URL. Accepts JSON body with 'original_url' and optional 'custom_alias'",
-			"GET /{code}":  "Redirect to the original URL associated with the short code",
+			"GET /{code}":   "Redirect to the original URL associated with the short code",
 		},
 	}
 

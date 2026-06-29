@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lxmwaniky/url-shortener/internal/models"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
-	"github.com/lxmwaniky/url-shortener/internal/models"
 )
 
 type CachedURLRepository struct {
