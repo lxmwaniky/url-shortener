@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -15,7 +16,7 @@ func Connect(cfg *config.Config) (*sql.DB, error) {
 	if len(cfg.DBHost) > 0 && cfg.DBHost[0] == '/' {
 		dsn = fmt.Sprintf("postgres://%s:%s@localhost/%s?sslmode=%s&host=%s",
 			cfg.DBUser,
-			cfg.DBPassword,
+			url.QueryEscape(cfg.DBPassword),
 			cfg.DBName,
 			cfg.DBSSLMode,
 			cfg.DBHost,
@@ -23,7 +24,7 @@ func Connect(cfg *config.Config) (*sql.DB, error) {
 	} else {
 		dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 			cfg.DBUser,
-			cfg.DBPassword,
+			url.QueryEscape(cfg.DBPassword),
 			cfg.DBHost,
 			cfg.DBPort,
 			cfg.DBName,
