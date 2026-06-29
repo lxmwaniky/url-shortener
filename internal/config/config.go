@@ -28,6 +28,7 @@ type Config struct {
 	CleanupInterval   string
 	BaseURL           string
 	RedisHost         string
+	RedisUseTLS       bool
 	RedisPort         string
 	RedisPassword     string
 	RedisDB           int
@@ -97,6 +98,7 @@ func Load() (*Config, error) {
 	}
 
 	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisUseTLS := os.Getenv("REDIS_USE_TLS") == "true"
 
 	redisDBStr := getEnv("REDIS_DB", "0")
 	redisDB, err := strconv.Atoi(redisDBStr)
@@ -151,6 +153,7 @@ func Load() (*Config, error) {
 		RedisHost:         redisHost,
 		RedisPort:         redisPort,
 		RedisPassword:     redisPassword,
+		RedisUseTLS:       redisUseTLS,
 		RedisDB:           redisDB,
 		RedisPoolSize:     redisPoolSize,
 		RedisMinIdleConns: redisMinIdleConns,
