@@ -11,7 +11,7 @@ pipeline {
         CR_PROD              = 'url-shortener-prod'
         DB_CONNECTION_STAGING = 'cloudcartel:us-central1:url-shortener-staging'
         DB_CONNECTION_PROD   = 'cloudcartel:us-central1:url-shortener-prod'
-        DB_NAME              = 'url_shortener'
+        DB_NAME              = 'url-shortener'
         DB_USER              = 'url-shortener-user'
         DB_PORT              = '5432'
         DB_SSLMODE           = 'disable'
