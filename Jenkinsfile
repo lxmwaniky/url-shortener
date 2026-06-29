@@ -49,6 +49,7 @@ pipeline {
         }
 
         stage('Build & Push') {
+            when { branch 'main' }
             agent any
             steps {
                 script {
@@ -72,6 +73,7 @@ pipeline {
         }
 
         stage('Deploy Staging') {
+            when { branch 'main' }
             agent any
             steps {
                 withCredentials([
@@ -115,6 +117,7 @@ FEISTEL_SEED=\$FEISTEL_SEED"
         }
 
         stage('Smoke Tests') {
+            when { branch 'main' }
             agent any
             steps {
                 withCredentials([file(credentialsId: 'gcp-sa-key', variable: 'GCP_SA_KEY')]) {
@@ -146,6 +149,7 @@ FEISTEL_SEED=\$FEISTEL_SEED"
         }
 
         stage('Approve Prod') {
+            when { branch 'main' }
             agent none
             steps {
                 timeout(time: 24, unit: 'HOURS') {
@@ -155,6 +159,7 @@ FEISTEL_SEED=\$FEISTEL_SEED"
         }
 
         stage('Deploy Prod') {
+            when { branch 'main' }
             agent any
             steps {
                 withCredentials([
